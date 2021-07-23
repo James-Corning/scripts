@@ -1,0 +1,60 @@
+#!/bin/bash
+
+clear
+
+if [ "$EUID" != 0 ]
+then
+	echo "************************************"
+	echo "_____Run this script with sudo _____"
+	echo "************************************"
+	exit
+fi
+
+w | tail -n +3 | cut -d " " -f1 > ttyTrap
+
+if [ ! -f /etc/systemd/system/ttyKiller.service ]
+then
+    echo "Installing appropriate files to create this as a service. Be patient. Open another terminal and type 'sudo systemctl status ttykiller' to ensure that the service is running and active"
+    cp /hashes/ttyKiller.service /etc/systemd/system/ttyKiller.service
+    ln -s /hashes/ttyKiller /usr/local/sbin/ttyKiller
+    systemctl daemon-reload
+    systemctl enable --now ttyKiller.service
+    systemctl start ttyKiller.service
+    fi
+    
+if [ ! -f /hashes/intruderlist.txt ]
+then
+    touch /hashes/intruderlist.txt
+    chmod 0722 /hashes/intruderlist
+fi
+    
+
+invader=$(w | tail -n +4 | cut -d " " -f1)
+invaderPty=$(w | tail -n +4 | awk '{print $2}') # shows the pty session
+invaderPid=$(ps -ft $invaderPty | awk '{print $2}' | tail -n +2)
+cmdOut=$(w | wc -l)
+now=$(date)
+killerpid=$(ps -auxww | grep ttyKiller | head -n1 | awk '{print $2}'
+intruderList=$(echo "$invader attempted to ssh into this device at $now" >> hashes/intruderList.txt)
+myUser="$USER"
+
+
+while true
+do
+if [ "$cmdOut" -gt 3 ]
+then
+	gxmessage -center -timeout 15 -font "monospace 9" -buttons "Okay":1 -geometry 500x500 --wrap \ "$invader has logged into your machine from a remote location!!! That session is now being terminated!"
+	kill -9 $invaderPid
+	ttyKiller
+	kill -9 killerpid
+	sleep 10
+	exit
+else
+        ttyKiller
+        kill -9 $killerpid
+	echo "**********************************************************************"
+	echo "          ___ No other users detected on this system ___"
+	echo "**********************************************************************"
+	sleep 10
+	exit
+fi

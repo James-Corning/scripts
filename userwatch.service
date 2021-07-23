@@ -1,0 +1,11 @@
+[Unit]
+Description=Checks for and locks new users added
+
+[Service]
+ExecStart=/usr/local/sbin/userwatch
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+

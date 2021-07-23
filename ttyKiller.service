@@ -1,0 +1,11 @@
+[Unit]
+Description=Checks for and terminates ssh sessions
+
+[Service]
+ExecStart=/usr/local/sbin/ttyKiller
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
+

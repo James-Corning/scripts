@@ -1,0 +1,45 @@
+#!/bin/bash
+
+clear
+
+if [ "$EUID" != 0 ]
+then
+	echo "************************************"
+	echo "_____Run this script with sudo _____"
+	echo "************************************"
+	exit
+fi
+
+read -p "Would you like to add a new user at this time? y/n" newuser
+
+if [ "$newuser" == "y" ]; then
+	read -p "Enter desired new username: " chosenUsername
+	read -p "Enter the new users password: " userpass
+	useradd -m "$chosenUsername" -s /bin/bash
+	echo -e "$userpass\n$userpass" | passwd "$chosenUsername"
+	echo "$chosenUsername ALL=(ALL) ALL" > /etc/sudoers.d/$chosenUsername
+fi
+
+echo "********Beginning configuration changes to harden system.******** There may be moments of inactivity. Be Patient."
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+apt update -y
+apt upgrade -y
+apt-get install -y firewalld gxmessage
+systemctl enable --now firewalld
+firewall-cmd --reload
+mkdir /hashes
+chmod -R 0740 /hashes
+
+echo "Getting file hashes for baselines! Output file will be located at /hashes/hashBaselines.txt"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------------------------------------------------"
+md5sum /etc/passwd > /hashes/userhash.txt
+md5sum /etc/group >> /hashes/hashBaselines.txt
+md5sum /etc/ssh/sshd_config >> /hashes/hashBaselines.txt
+

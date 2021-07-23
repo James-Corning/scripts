@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]
+then
+	echo "************************************"
+	echo "_____Run this script using sudo_____"
+	echo "************************************"
+	exit
+fi
+
+if [ ! -f /etc/hashverify.txt ]
+then
+    touch /etc/hashverify.txt
+    chmod 0600 /etc/hashverify.txt
+    md5sum /etc/passwd | cut -d " " -f1 > /etc/hashverify.txt
+fi
+
+if [ ! -f /etc/systemd/system/userwatch.service ]
+then
+    cp userwatch.service /etc/systemd/system/userwatch.service
+fi
+
+if [ ! -f /usr/local/sbin/userwatch ]
+then
+    cp userwatch /usr/local/sbin/userwatch
+fi
+   
+
+baseline=$(cat /hashes/userhash.txt)
+currentTest=$(md5sum /etc/passwd | cut -d " " -f1)
+echo $currentTest > /hashes/userhash2.txt
+userlock=$(tail -n1 /etc/passwd | cut -d ":" -f1)
+userwatchPid=$(ps -auxww | grep userwatch | head -n1 | awk '{print $2}'
+
+
+if [ $currentTest != $baseline ];then
+	gxmessage -center -timeout 60 -font "monospace 9" -buttons "Okay":1 -geometry 500x500 --wrap \ "A new user $userlock has been created. It is locked until you validate and unlock it."
+	usermod -L $userlock
+	userwatch
+	kill -9 $userwatchPid
+	sleep 10
+	
+else
+	echo "************************************"
+	echo "************************************"
+	echo "************************************"
+	echo "Userlist has not changed."
+	sleep 10
+	userwatch
+	kill -9 $userwatchPid
+fi
+
